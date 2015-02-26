@@ -1,0 +1,12 @@
+{
+  "name": "xml-parser.js",
+  "version": "0.0.0",
+  "description": "",
+  "main": "xml-compare.js",
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "node-expat": "^2.3.6",
+    "underscore": "^1.8.2"
+  }
+}
