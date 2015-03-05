@@ -1,0 +1,9 @@
+#!/usr/bin/env node
+
+var fs = require('fs');
+var concat = require('concat-stream');
+var compare = require('../xml-compare').comparePretty;
+
+var expectedFile = process.argv[2];
+
+compare(fs.createReadStream(expectedFile), process.stdin);

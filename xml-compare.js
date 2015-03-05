@@ -90,7 +90,9 @@ XmlComparator.prototype._drain = function () {
             // TODO hack
             this._drain = function () {};
             _(this.streams).each(function (stream) {
-                stream.close();
+                if (_(stream.close).isFunction()) {
+                    stream.close();
+                }
             })
             this.emit('differ', e.message, a, b);
         }
