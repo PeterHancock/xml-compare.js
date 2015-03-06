@@ -6,4 +6,7 @@ var compare = require('../xml-compare').comparePretty;
 
 var expectedFile = process.argv[2];
 
-compare(fs.createReadStream(expectedFile), process.stdin);
+compare(fs.createReadStream(expectedFile), process.stdin)
+        .on('differ', function () {
+            process.exit(1);
+        });
