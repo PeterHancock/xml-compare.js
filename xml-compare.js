@@ -66,10 +66,14 @@ XmlComparator.prototype._register = function (id, event) {
         if (this._textBuffers[id] === null) {
             this._textBuffers[id] = [];
         }
-        Array.prototype.push.apply(this._textBuffers[id], event.args[0].trim().split(/\r?\n/));
+        // TODO improve whitespace handling
+        var txtArray = _(event.args[0].trim().split(/\r?\n/)).filter(function (str) { return str !== ''; });
+        Array.prototype.push.apply(this._textBuffers[id], txtArray);
     } else {
         if (this._textBuffers[id] !== null) {
-            this._eventQueues[id].push({ event: 'text', args: this._textBuffers[id] });
+            if (this._textBuffers[id].length > 0) {
+                this._eventQueues[id].push({ event: 'text', args: this._textBuffers[id] });
+            }
             this._textBuffers[id] = null;
         }
         this._eventQueues[id].push(event);
