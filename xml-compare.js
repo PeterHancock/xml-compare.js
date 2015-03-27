@@ -1,32 +1,35 @@
 var _ = require('underscore');
-var expat = require('node-expat');
+var sax = require('sax');
 var fs = require('fs');
 var assert = require('assert');
 var EventEmitter2 = require('eventemitter2').EventEmitter2;
 var util = require('util');
 
-var XML_EVENTS = ['startElement', 'endElement', 'text'];
+var saxEvents = ['opentag' , 'closetag', 'text'];
 
 var xmlCompare = {
     startElement: function (expected, actual) {
-        assert.equal(expected[0], actual[0], 'Element names differ');
-        assert.deepEqual(expected[1], actual[1], 'Attributes differ');
+        assert.equal(expected.name, actual.name, 'Element names differ');
+        assert.deepEqual(expected.attributes, actual.attributes, 'Attributes differ');
     },
     endElement: function (expected, actual) {
         //TODO can this happen?
-        assert.equal(expected[0], actual[0], 'Expected end element');
+        assert.equal(expected, actual, 'Expected end element');
     },
     text: function (expected, actual) {
         assert.deepEqual(expected, actual, 'text differs');
     }
 };
 
-var handler = {
-    startElement: function (name, atts) {
+var mapEvents = {
+    opentag: function (args) {
+        return { event: 'startElement', args: args };
     },
-    endElement: function (name) {
+    closetag: function (name) {
+        return { event: 'endElement', args: name };
     },
     text: function (text) {
+        return { event: 'text', args: text };
     }
 };
 
@@ -52,10 +55,10 @@ XmlComparator.prototype.compare = function (expectedInput, actualInput) {
 };
 
 XmlComparator.prototype._createParser = function (id) {
-    var parser = new expat.Parser('UTF-8');
-    _(XML_EVENTS).each(function(event) {
-        parser.on(event, function () {
-            this._register(id, { event: event, args: Array.prototype.slice.call(arguments) });
+    var parser = sax.createStream(false /*strict*/, { trim: true, normalize: true, lowercase: true });
+    _(saxEvents).each(function(event) {
+        parser.on(event, function (data) {
+            this._register(id, mapEvents[event](data));
         }.bind(this));
     }, this);
     return parser;
@@ -67,7 +70,7 @@ XmlComparator.prototype._register = function (id, event) {
             this._textBuffers[id] = [];
         }
         // TODO improve whitespace handling
-        var txtArray = _(event.args[0].trim().split(/\r?\n/)).filter(function (str) { return str !== ''; });
+        var txtArray = _(event.args.trim().split(/\r?\n/)).filter(function (str) { return str !== ''; });
         Array.prototype.push.apply(this._textBuffers[id], txtArray);
     } else {
         if (this._textBuffers[id] !== null) {
@@ -79,17 +82,16 @@ XmlComparator.prototype._register = function (id, event) {
         this._eventQueues[id].push(event);
         this._drain();
     }
-
 };
 
 XmlComparator.prototype._drain = function () {
     while (this._eventQueues['actual'].length && this._eventQueues['expected'].length) {
-        var a = this._eventQueues['expected'].shift();
-        var b = this._eventQueues['actual'].shift();
+        var expected = this._eventQueues['expected'].shift();
+        var actual = this._eventQueues['actual'].shift();
         try {
-            assert.equal(a.event, b.event, 'Events types differ');
-            compare[a.event](a.args, b.args);
-            this.emit('same', a, b);
+            assert.equal(expected.event, actual.event, 'Events types differ');
+            compare[expected.event](expected.args, actual.args);
+            this.emit('same', expected, actual);
         } catch (e) {
             // TODO hack
             this._drain = function () {};
@@ -98,7 +100,7 @@ XmlComparator.prototype._drain = function () {
                     stream.close();
                 }
             })
-            this.emit('differ', e.message, a, b);
+            this.emit('differ', e.message, expected, actual);
         }
     }
 };

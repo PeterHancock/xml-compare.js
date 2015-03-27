@@ -1,4 +1,5 @@
 require('colors');
+var _ = require('underscore');
 var jsdiff = require('diff');
 
 module.exports = function(xmlComparator) {
@@ -23,24 +24,14 @@ module.exports = function(xmlComparator) {
         });
     }
 
-    function sanitizeArgs(args) {
-        if (args.length === 0) {
-            return '';
-        } else if (args.length === 1) {
-            return args[0];
-        }
-        return args;
-    }
-
-
     function diff(expected, actual) {
-        var diff = jsdiff.diffChars(JSON.stringify(expected), JSON.stringify(actual));
+        var diff = jsdiff.diffChars(expected, actual);
 
         diff.forEach(function(part) {
             // green for additions, red for deletions
             // grey for common parts
-            var color = part.added ? 'green' :
-            part.removed ? 'red' : 'grey';
+            var color = part.added ? 'red' :
+            part.removed ? 'green' : 'grey';
             process.stderr.write(part.value[color]);
         });
         console.error();
@@ -49,7 +40,7 @@ module.exports = function(xmlComparator) {
     return xmlComparator.on('same', function(expected, actual) {
         switch (expected.event) {
             case 'startElement':
-                start(expected.args[0]);
+                start(expected.args.name);
                 break;
             case 'endElement':
                 context.pop();
@@ -62,19 +53,41 @@ module.exports = function(xmlComparator) {
             var path = context[context.length - 1].path;
             console.error(path + '/{<' + expected.event + '>,<' + actual.event + '>}');
         } else {
-            if (expected.event === 'startElement' && expected.args[0] === actual.args[0]) {
-                start(expected.args[0]);
-                expected.args.shift();
-                actual.args.shift();
+            if (expected.event === 'startElement' && expected.args.name === actual.args.name) {
+                start(expected.args.name);
             }
-            var path = context[context.length - 1].path;
-            console.error("Xpath: " + path.green);
-            if (expected.event !== 'text') {
-                diff(JSON.stringify(expected.args), JSON.stringify(actual.args));
-            } else {
-                diff(expected.args.join(''), actual.args.join(''));
-            }
+            var path = context[context.length - 1].path + '/';
 
+            switch (expected.event) {
+                case 'text':
+                    diff(formatTextForDiff(path, expected.args), formatTextForDiff(path, actual.args));
+                    break;
+                case 'startElement':
+                    if (expected.args.name !== actual.args.name) {
+                        diff(path +  expected.args.name, path + actual.args.name);
+                    } else {
+                        path = path + expected.args.name + '/';
+                        diff(
+                            formatAttributesForDiff(path, expected.args.attributes),
+                            formatAttributesForDiff(path, actual.args.attributes)
+                        );
+                    }
+                    break;
+                default:
+                    diff(path +  expected.args, path + actual.args);
+            }
         }
     });
+
+    function formatTextForDiff(path, textArray) {
+        return path + 'text(' + textArray.join('') + ')';
+    }
+
+    function formatElementForDiff(path, element) {
+        return path + element;
+    }
+
+    function formatAttributesForDiff(path, atts) {
+        return path + '[' + _(atts).map(function (v, k) { return '@' + k + '=' + v; }).join(', ') +  ']';
+    }
 };
