@@ -1,9 +1,13 @@
 var _ = require('underscore');
-var sax = require('sax');
+var Sax = require('sax-async');
 var fs = require('fs');
 var assert = require('assert');
 var EventEmitter2 = require('eventemitter2').EventEmitter2;
 var util = require('util');
+var PassThrough = require('stream').PassThrough;
+var StreamCounter = require('stream-counter');
+
+var BUFFER_SIZE = 20000;
 
 var saxEvents = ['opentag' , 'closetag', 'text'];
 
@@ -55,13 +59,25 @@ XmlComparator.prototype.compare = function (expectedInput, actualInput) {
 };
 
 XmlComparator.prototype._createParser = function (id) {
-    var parser = sax.createStream(false /*strict*/, { trim: true, normalize: true, lowercase: true });
+    var parser = new Sax(false /*strict*/, { trim: true, normalize: true, lowercase: true });
+    var window = 0;
+    var counter = new StreamCounter();
     _(saxEvents).each(function(event) {
-        parser.on(event, function (data) {
+        parser.hookAsync(event, function (next, data) {
+            var numBytes = counter.bytes;
             this._register(id, mapEvents[event](data));
+            if (numBytes < window + BUFFER_SIZE) {
+                next();
+            } else {
+                window = numBytes;
+                _(next).defer();
+            }
         }.bind(this));
     }, this);
-    return parser;
+    var p = new PassThrough();
+    p.pipe(counter);
+    p.pipe(parser);
+    return p;
 };
 
 XmlComparator.prototype._register = function (id, event) {

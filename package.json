@@ -11,7 +11,8 @@
     "colors": "^1.0.3",
     "diff": "^1.2.2",
     "concat-stream": "^1.4.7",
-    "sax": "^0.6.1"
+    "sax-async": "0.0.4",
+    "stream-counter": "^1.0.0"
   },
   "bin": {
     "xml-compare": "./bin/compare"
