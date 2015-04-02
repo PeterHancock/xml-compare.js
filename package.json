@@ -1,10 +1,10 @@
 {
   "name": "xml-compare.js",
-  "version": "0.0.0",
-  "description": "",
+  "version": "0.0.1",
+  "description": "Compare xml streams",
   "main": "xml-compare.js",
   "author": "",
-  "license": "ISC",
+  "license": "MIT",
   "dependencies": {
     "underscore": "^1.8.2",
     "eventemitter2": "^0.4.14",
