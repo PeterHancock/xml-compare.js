@@ -48,7 +48,6 @@ module.exports = function(xmlComparator) {
             default:
         }
     }).on('differ', function(reason, expected, actual) {
-
         if (expected.event !== actual.event) {
             var path = context[context.length - 1].path;
             console.error(path + '/{<' + expected.event + '>,<' + actual.event + '>}');

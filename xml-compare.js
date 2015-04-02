@@ -107,7 +107,11 @@ XmlComparator.prototype._drain = function () {
         try {
             assert.equal(expected.event, actual.event, 'Events types differ');
             compare[expected.event](expected.args, actual.args);
-            this.emit('same', expected, actual);
+            if (expected.event == 'end') {
+                this.emit('end');
+            } else {
+                this.emit('same', expected, actual);
+            }
         } catch (e) {
             // TODO hack
             this._drain = function () {};
