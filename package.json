@@ -1,7 +1,7 @@
 {
   "name": "xml-compare.js",
   "version": "0.0.1",
-  "description": "Compare xml streams",
+  "description": "Compare XML streams",
   "main": "xml-compare.js",
   "author": "",
   "license": "MIT",
