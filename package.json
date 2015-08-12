@@ -2,9 +2,15 @@
   "name": "xml-compare.js",
   "version": "0.0.1",
   "description": "Compare XML streams",
-  "main": "xml-compare.js",
+  "main": "lib/index.js",
   "author": "",
   "license": "MIT",
+  "bin": {
+    "xml-compare": "./bin/compare"
+  },
+  "scripts": {
+    "test": "babel-tape-runner tests/**/*.js"
+  },
   "dependencies": {
     "underscore": "^1.8.2",
     "eventemitter2": "^0.4.14",
@@ -14,7 +20,9 @@
     "sax-async": "0.0.4",
     "stream-counter": "^1.0.0"
   },
-  "bin": {
-    "xml-compare": "./bin/compare"
+  "devDependencies": {
+    "babel-tape-runner": "^1.2.0",
+    "through": "^2.3.8",
+    "xml-builder": "PeterHancock/xml-builder.js"
   }
 }
