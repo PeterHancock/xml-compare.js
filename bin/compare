@@ -2,7 +2,7 @@
 
 var fs = require('fs');
 var concat = require('concat-stream');
-var compare = require('lib/index').comparePretty;
+var compare = require('../lib/index').comparePretty;
 
 var expectedFile = process.argv[2];
 
