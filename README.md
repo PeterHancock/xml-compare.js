@@ -4,8 +4,6 @@
 
 A performant XML stream comparator
 
-## Install
-```npm install -g .```
 
 ## CLI Usage
 
@@ -13,7 +11,7 @@ A performant XML stream comparator
 
 ## API
 
-```
+``` javascript
 var fs = require('fs'),
     XmlCompare = require('./xml-compare');
 
@@ -58,6 +56,9 @@ XmlCompare.comparePretty(expectedStream, actualStream)
     .on(...);
 ```
 then `differ` events will be also logged to the console as [diffed](https://github.com/kpdecker/jsdiff) XPath-like text
+
+## Install
+```npm i -g xml-compare.js```
 
 ## LICENSE
 
