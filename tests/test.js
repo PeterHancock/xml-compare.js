@@ -2,22 +2,30 @@ var _ = require('underscore'),
     test = require('tape'),
     through = require('through'),
     compare = require('lib/index').compare,
-    xmlBuilder = require('xml-builder'),
+    XmlWriter = require('xml-writer'),
     serializer = require('xml-builder/serializer');
 
-function xmlBase() {
-        this('root', { 'root_attr_1': 'root att 1 value' })
-            ('child_1')()
-            ('child_2')
-                .text('child 2 text')
-            ()
-            ('child_3')
-                (['child 3 text 1', 'child 3 text 2'])
-            ()
-            ('child_4')
-                ('child_4_1')
-                ()
-            ();
+function xmlBase(xw) {
+    xw.startElement('root').writeAttribute('root_attr_1', 'root att 1 value')
+        .writeElement('child_1', '')
+        .writeElement('child_2', 'child 2 text')
+        .writeElement('child_3', 'child 3 text 1\nchild 3 text 2')
+        .startElement('child_4')
+            .writeElement('child_4_1', '')
+        .endElement()
+
+}
+
+function xmlWriter(stream) {
+    return Object.create(Object.assign(
+        new XmlWriter(true, (string, encoding) => stream.write(string, encoding)),
+        {
+            accept: function (builder) {
+                        builder.call(this, this);
+                        return this;
+                    }
+        }
+    ));
 }
 
 function writerFor(stream) {
@@ -33,13 +41,10 @@ test('Basic test', function (t) {
     var streams = [through(), through()];
     t.plan(1);
     compare(...streams)
-        .on('end', t.pass.bind(t));
-
+        .on('end', () => t.pass('Streams equals'));
     streams.forEach((stream) => {
-        getXmlBuilder(stream)
-        (xmlBase)
-        ();
-        stream.end();
+        xmlWriter(stream).startDocument().accept(xmlBase).endElement().endDocument();
+        stream.end()
     });
 });
 
@@ -47,20 +52,17 @@ test('Basic test async', (t) => {
     var streams = [through(), through()];
     t.plan(1);
     compare(...streams)
-        .on('end', t.pass.bind(t));
-
+        .on('end', () => t.pass('Streams equals'));
     streams.forEach((stream) => {
-        getXmlBuilder(stream)
-        (xmlBase)
-        (function () {
-            let builder = this;
-            setTimeout(() => {
-                builder('x')()
-                builder('y')()
-                ()
+        xmlWriter(stream).startDocument()
+            .accept(xmlBase)
+            .accept((xw) => {
+                xw.writeElement('x', '')
+                    .writeElement('y', '')
+                    .endElement()
+                    .endDocument();
                 stream.end();
             });
-        });
     });
 
 });
@@ -72,24 +74,13 @@ test('Basic diff', (t) => {
     };
     t.plan(1);
     compare(..._(streams).values())
-        .on('differ', t.pass.bind(t));
-
-    function xml(stream, customEventCreator) {
-        getXmlBuilder(stream)
-        (xmlBase)
-        (customEventCreator)
-        ();
-    }
+        .on('differ', () => t.pass('Streams differ') );
 
     _(streams).each((stream, name) => {
-        getXmlBuilder(stream)
-        (xmlBase)
-        (function() {
-            this(name)()
-            ();
-            stream.end();
-         })
-        ();
+        xmlWriter(stream).startDocument()
+            .accept(xmlBase)
+            .writeElement(name, '')
+        stream.end();
     });
 });
 
@@ -100,26 +91,15 @@ test('Basic diff async', (t) => {
     };
     t.plan(1);
     compare(..._(streams).values())
-        .on('differ', t.pass.bind(t));
-
-    function xml(stream, customEventCreator) {
-        getXmlBuilder(stream)
-        (xmlBase)
-        (customEventCreator)
-        ();
-    }
+    .on('differ', () => t.pass('Streams differ') );
 
     _(streams).each((stream, name) => {
-        getXmlBuilder(stream)
-        (xmlBase)
-        (function() {
-            let builder = this;
-            setTimeout(() => {
-                this(name)()
-                ();
+        xmlWriter(stream).startDocument()
+            .accept(xmlBase)
+            .accept((xw) => {
+                xw.writeElement(name, '')
                 stream.end();
             })
-         })
-        ();
+            .writeElement(name, '')
     });
 });

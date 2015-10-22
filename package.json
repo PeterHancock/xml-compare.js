@@ -22,7 +22,8 @@
   },
   "devDependencies": {
     "babel-tape-runner": "^1.2.0",
+    "tape": "^4.0.3",
     "through": "^2.3.8",
-    "xml-builder": "PeterHancock/xml-builder.js"
+    "xml-writer": "^1.6.0"
   }
 }
